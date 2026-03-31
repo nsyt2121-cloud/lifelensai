@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeLens AI - Plan Your Life</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="custom-cursor-dot" id="cursor-dot"></div>
+    <div class="custom-cursor-outline" id="cursor-outline"></div>
+
+    <div class="container main-container">
+        <!-- Landing View -->
+        <section id="landing-view" class="view active">
+            <header>
+                <div class="logo">
+                    <i class="fa-solid fa-eye logo-icon"></i>
+                    <span>LifeLens AI</span>
+                </div>
+            </header>
+            
+            <div class="hero-section">
+                <h1 class="main-title">Turn chaos into clarity.</h1>
+                <p class="subtitle">Convert your thoughts into structured, actionable plans instantly.</p>
+                
+                <div class="input-container glass-panel" style="flex-direction:column; padding:1.5rem; gap:1rem; max-width: 800px;">
+                    <form id="plan-form" style="display:flex;">
+                        <input type="text" id="goal-input" placeholder="What do you want to do today?" required autocomplete="off" style="flex:1;">
+                        <button type="submit" id="generate-btn" class="neon-button">
+                            <span>Generate Plan</span>
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </button>
+                    </form>
+                    <div class="mode-selector" style="display:flex; justify-content:center; gap:2rem; font-size:0.95rem; background:rgba(255,255,255,0.05); padding:0.5rem; border-radius:100px;">
+                        <label style="cursor:pointer; display:flex; gap:0.5rem; align-items:center;"><input type="radio" name="plan-mode" value="fast"> Fast Mode</label>
+                        <label style="cursor:pointer; display:flex; gap:0.5rem; align-items:center;"><input type="radio" name="plan-mode" value="balanced" checked> Balanced Mode</label>
+                        <label style="cursor:pointer; display:flex; gap:0.5rem; align-items:center;"><input type="radio" name="plan-mode" value="detailed"> Detailed Mode</label>
+                    </div>
+                </div>
+                
+                <div class="prompt-suggestions">
+                    <span class="suggestion-chip" onclick="fillPrompt('I need to prepare for a software engineering interview in 2 weeks')">Software Interview</span>
+                    <span class="suggestion-chip" onclick="fillPrompt('Plan a productive Sunday focusing on meal prep and cleaning')">Productive Sunday</span>
+                    <span class="suggestion-chip" onclick="fillPrompt('How do I start learning Spanish effectively?')">Learn Spanish</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading View -->
+        <section id="loading-view" class="view">
+            <div class="loader-container">
+                <div class="scifi-loader">
+                    <div class="scifi-loader-ring"></div>
+                    <div class="scifi-loader-ring"></div>
+                    <div class="scifi-loader-ring"></div>
+                    <div class="scifi-loader-core">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                </div>
+                <div class="scanning-bar-container">
+                    <div class="scanning-bar"></div>
+                </div>
+                <h2 id="loading-text" class="glitch-text">WORKING THE MAGIC...</h2>
+                <div class="loading-console">
+                    <ul id="loading-logs">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard View -->
+        <section id="dashboard-view" class="view">
+            <header class="dashboard-header">
+                <div class="logo" onclick="resetApp()">
+                    <i class="fa-solid fa-eye logo-icon"></i>
+                    <span>LifeLens AI</span>
+                </div>
+                <div class="action-buttons">
+                    <button id="explain-btn" class="glass-button"><i class="fa-solid fa-comment-dots"></i> Explain</button>
+                    <button id="regenerate-btn" class="glass-button"><i class="fa-solid fa-rotate-right"></i> Regenerate</button>
+                </div>
+            </header>
+            
+            <!-- Explanation Modal Overlay (Hidden by default) -->
+            <div id="explanation-overlay" class="overlay hidden">
+                <div class="glass-panel explanation-panel">
+                    <h3><i class="fa-solid fa-robot"></i> AI Reasoning</h3>
+                    <div id="explanation-content" class="explanation-content">
+                        <div class="mini-spinner"></div>
+                    </div>
+                    <button id="close-explain-btn" class="glass-button close-btn">Close</button>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Goal Card -->
+                <div class="card glass-panel goal-card animate-enter" style="--delay: 0.1s">
+                    <div class="card-header" style="justify-content: space-between;">
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <i class="fa-solid fa-bullseye card-icon"></i>
+                            <h2>Your Goal</h2>
+                        </div>
+                        <div id="display-complexity" class="complexity-badge">Beginner</div>
+                    </div>
+                    <div class="card-body">
+                        <p id="display-goal" class="goal-text"></p>
+                    </div>
+                </div>
+
+                <!-- Next Action Card (Highlight) -->
+                <div class="card glass-panel highlight-card animate-enter" style="--delay: 0.2s">
+                    <div class="card-header">
+                        <i class="fa-solid fa-bolt card-icon"></i>
+                        <h2>Do This Right Now</h2>
+                    </div>
+                    <div class="card-body">
+                        <p id="display-next-action" class="next-action-text"></p>
+                    </div>
+                </div>
+
+                <!-- Progress Graph Card -->
+                <div class="card glass-panel progress-card animate-enter" style="--delay: 0.25s">
+                    <div class="card-header">
+                        <i class="fa-solid fa-chart-pie card-icon"></i>
+                        <h2>Task Progress</h2>
+                    </div>
+                    <div class="card-body progress-body" style="display:flex; justify-content:center;">
+                        <div class="circular-progress" style="position:relative; width:120px; height:120px;">
+                            <svg class="progress-ring" width="120" height="120">
+                                <circle class="progress-ring__circle bg" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                                <circle class="progress-ring__circle fg" stroke="var(--primary-color)" stroke-width="8" fill="transparent" r="52" cx="60" cy="60" style="transition: stroke-dashoffset 0.5s ease-in-out; transform: rotate(-90deg); transform-origin: 50% 50%; stroke-linecap: round;"/>
+                            </svg>
+                            <div class="progress-text" id="progress-text" style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:bold;">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks Card -->
+                <div class="card glass-panel tasks-card animate-enter" style="--delay: 0.3s">
+                    <div class="card-header">
+                        <i class="fa-solid fa-list-check card-icon"></i>
+                        <h2>Actionable Tasks</h2>
+                    </div>
+                    <div class="card-body">
+                        <ul id="display-tasks" class="task-list">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Timeline / Flow Card -->
+                <div class="card glass-panel timeline-card animate-enter" style="--delay: 0.4s">
+                    <div class="card-header">
+                        <i class="fa-solid fa-clock card-icon"></i>
+                        <h2>Timeline</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="display-timeline" class="timeline-container">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Risks Card -->
+                <div class="card glass-panel risks-card animate-enter" style="--delay: 0.5s">
+                    <div class="card-header">
+                        <i class="fa-solid fa-triangle-exclamation card-icon text-warning"></i>
+                        <h2>Potential Risks</h2>
+                    </div>
+                    <div class="card-body">
+                        <ul id="display-risks" class="risk-list">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Theme Control based on intent -->
+    <div id="theme-controller" data-theme="default"></div>
+
+    <!-- Chatbot Toggle Button -->
+    <div id="chat-fab" class="chat-fab">
+        <i class="fa-solid fa-sparkles"></i>
+    </div>
+
+    <!-- Chatbot Widget -->
+    <div id="chatbot-widget" class="chatbot-widget hidden-chat">
+        <div class="chat-header" id="chat-header">
+            <div class="chat-title">
+                <div class="ai-avatar"><i class="fa-solid fa-robot"></i></div>
+                <div>
+                   <span style="display:block; font-size:1.05rem; letter-spacing:-0.5px;">LifeLens AI</span>
+                   <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:normal;">Online</span>
+                </div>
+            </div>
+            <button id="close-chat-btn" class="glass-button" style="border:none; padding:8px; width:35px; height:35px; justify-content:center;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="chat-message ai-message">
+                <div class="msg-bubble">Hi! How can I help you execute your plan today?</div>
+            </div>
+        </div>
+        <div class="chat-footer">
+            <div class="chat-input-wrapper">
+                <input type="text" id="chat-input" placeholder="Ask anything..." autocomplete="off">
+                <button id="send-chat-btn"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Watermark -->
+    <div class="watermark">TEAM GULUKOOSE</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="../static/js/app.js"></script>
+</body>
+</html>
